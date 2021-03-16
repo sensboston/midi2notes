@@ -27,9 +27,12 @@ typedef void (PLAYER_CALLBACK)();
 #endif 
 
     class {1}Player {{
+    private:
+        int len[{0}] = {{ {2} }}; 
+        Note* music[ARRAY_LENGTH(len)] = {{ {3} }};
 	public:
 		void begin(int startPin = 12) {{
-			for (int i=0; i<{0};i++) {{
+			for (int i=0; i<ARRAY_LENGTH(len);i++) {{
     			ledcSetup(i*2, 2000, 8);
     			ledcAttachPin(startPin+i, i*2);
 			}}
@@ -37,10 +40,10 @@ typedef void (PLAYER_CALLBACK)();
         void play(int8_t tempo, int8_t octShift) {{
             musicTempo = tempo;
             octaveShift = octShift;
-            for (int i=0; i<{0}; i++) {{ idx[i] = ms[i] = 0; doPlay[i] = true; }}
+            for (int i=0; i<ARRAY_LENGTH(len); i++) {{ idx[i] = ms[i] = 0; doPlay[i] = true; }}
         }}
 		void update() {{
-			for (int i=0; i<{0}; i++) {{
+			for (int i=0; i<ARRAY_LENGTH(len); i++) {{
 				if (doPlay[i] && millis()-ms[i] >= music[i][idx[i]].duration*musicTempo) {{
                     ms[i]=millis();
                     if (idx[i]++ < len[i]-1) {{
@@ -55,17 +58,17 @@ typedef void (PLAYER_CALLBACK)();
 			}}
             if (!isPlaying() && pEndMusic) (*pEndMusic)();
 		}}
-        void pause() {{ for (int i=0; i<{0}; i++) {{ doPlay[i]=false; ledcWrite(i*2, 0); }} }}
-        void resume() {{ for (int i=0; i<{0}; i++) doPlay[i]=true; }}
+        void pause() {{ for (int i=0; i<ARRAY_LENGTH(len); i++) {{ doPlay[i]=false; ledcWrite(i*2, 0); }} }}
+        void resume() {{ for (int i=0; i<ARRAY_LENGTH(len); i++) doPlay[i]=true; }}
         bool isPlaying() {{ 
-            for (int i=0; i<{0}; i++) if (doPlay[i]) return true; 
+            for (int i=0; i<ARRAY_LENGTH(len); i++) if (doPlay[i]) return true; 
             return false;
         }}
         void setOnEndMusic(PLAYER_CALLBACK *callback) {{ pEndMusic = callback; }}
 	private:
-        int idx[{0}];
-        unsigned long ms[{0}];
-        bool doPlay[{0}];
+        int idx[ARRAY_LENGTH(len)];
+        unsigned long ms[ARRAY_LENGTH(len)];
+        bool doPlay[ARRAY_LENGTH(len)];
         int8_t musicTempo = 2;
         int8_t octaveShift = 0;
         PLAYER_CALLBACK *pEndMusic = NULL;
@@ -137,7 +140,15 @@ typedef void (PLAYER_CALLBACK)();
                 }
             }
 
-            var sb = new StringBuilder(string.Format(classSrc, music.Count, Path.GetFileNameWithoutExtension(args[0])));
+            string len = string.Empty;
+            for (int i = 1; i <= music.Count; i++) len += $"ARRAY_LENGTH(ch_{i}),";
+            len = len.Remove(len.Length-1, 1);
+
+            string arr = string.Empty;
+            for (int i = 1; i <= music.Count; i++) arr += $"ch_{i},";
+            arr = arr.Remove(arr.Length-1, 1);
+
+            var sb = new StringBuilder(string.Format(classSrc, music.Count, Path.GetFileNameWithoutExtension(args[0]), len, arr));
             int num = 0;
             foreach (var chan in music)
             {
@@ -157,16 +168,6 @@ typedef void (PLAYER_CALLBACK)();
                 sb.Replace(',', ' ', sb.Length-4, 4);
                 sb.AppendLine("};\n");
             }
-
-            sb.Append($"\t\tNote* music[{music.Count}] = {{");
-            for (int i = 1; i <= music.Count; i++) sb.Append($"ch_{i},");
-            sb.Remove(sb.Length - 1, 1);
-            sb.AppendLine("};");
-
-            sb.Append($"\t\tint len[{music.Count}] = {{");
-            for (int i = 1; i <= music.Count; i++) sb.Append($"ARRAY_LENGTH(ch_{i}),");
-            sb.Remove(sb.Length - 1, 1);
-            sb.AppendLine("};");
             sb.AppendLine("};");
             Console.WriteLine(sb);
         }

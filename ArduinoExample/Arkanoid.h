@@ -10,9 +10,12 @@ typedef void (PLAYER_CALLBACK)();
 #endif 
 
     class ArkanoidThemePlayer {
+    private:
+        int len[3] = { ARRAY_LENGTH(ch_1),ARRAY_LENGTH(ch_2),ARRAY_LENGTH(ch_3) }; 
+        Note* music[ARRAY_LENGTH(len)] = { ch_1,ch_2,ch_3 };
 	public:
 		void begin(int startPin = 12) {
-			for (int i=0; i<3;i++) {
+			for (int i=0; i<ARRAY_LENGTH(len);i++) {
     			ledcSetup(i*2, 2000, 8);
     			ledcAttachPin(startPin+i, i*2);
 			}
@@ -20,10 +23,10 @@ typedef void (PLAYER_CALLBACK)();
         void play(int8_t tempo, int8_t octShift) {
             musicTempo = tempo;
             octaveShift = octShift;
-            for (int i=0; i<3; i++) { idx[i] = ms[i] = 0; doPlay[i] = true; }
+            for (int i=0; i<ARRAY_LENGTH(len); i++) { idx[i] = ms[i] = 0; doPlay[i] = true; }
         }
 		void update() {
-			for (int i=0; i<3; i++) {
+			for (int i=0; i<ARRAY_LENGTH(len); i++) {
 				if (doPlay[i] && millis()-ms[i] >= music[i][idx[i]].duration*musicTempo) {
                     ms[i]=millis();
                     if (idx[i]++ < len[i]-1) {
@@ -38,17 +41,17 @@ typedef void (PLAYER_CALLBACK)();
 			}
             if (!isPlaying() && pEndMusic) (*pEndMusic)();
 		}
-        void pause() { for (int i=0; i<3; i++) { doPlay[i]=false; ledcWrite(i*2, 0); } }
-        void resume() { for (int i=0; i<3; i++) doPlay[i]=true; }
+        void pause() { for (int i=0; i<ARRAY_LENGTH(len); i++) { doPlay[i]=false; ledcWrite(i*2, 0); } }
+        void resume() { for (int i=0; i<ARRAY_LENGTH(len); i++) doPlay[i]=true; }
         bool isPlaying() { 
-            for (int i=0; i<3; i++) if (doPlay[i]) return true; 
+            for (int i=0; i<ARRAY_LENGTH(len); i++) if (doPlay[i]) return true; 
             return false;
         }
         void setOnEndMusic(PLAYER_CALLBACK *callback) { pEndMusic = callback; }
 	private:
-        int idx[3];
-        unsigned long ms[3];
-        bool doPlay[3];
+        int idx[ARRAY_LENGTH(len)];
+        unsigned long ms[ARRAY_LENGTH(len)];
+        bool doPlay[ARRAY_LENGTH(len)];
         int8_t musicTempo = 2;
         int8_t octaveShift = 0;
         PLAYER_CALLBACK *pEndMusic = NULL;
@@ -411,7 +414,5 @@ typedef void (PLAYER_CALLBACK)();
 { NOTE_G, 2, 24 },{ NOTE_G, 1, 24 },{ NOTE_G, 1, 24 },{ NOTE_G, 2, 24 },{ NOTE_G, 2, 48 } 
 };
 
-		Note* music[3] = {ch_1,ch_2,ch_3};
-		int len[3] = {ARRAY_LENGTH(ch_1),ARRAY_LENGTH(ch_2),ARRAY_LENGTH(ch_3)};
 };
 
